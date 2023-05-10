@@ -1,47 +1,30 @@
 import { v4 as uuidv4 } from "uuid";
-import { getNumberPayload } from "src/helpers/amplitude/experiments";
-import { YELLOW_TIMEOUT_DURATION } from "src/consts/amplitude-experiments";
 
-const NEXT_PUBLIC_YELLOW_BOT_ID = process.env.NEXT_PUBLIC_YELLOW_BOT_ID;
-
-const YMAUTH_GUEST = "ym-auth-guest";
-
-const TIMEOUT_FLAG = getNumberPayload(YELLOW_TIMEOUT_DURATION);
-const isProduction = process.env.NODE_ENV === "production";
-
-// Variables based on milliseconds
-const ONE_MINUTE = 60 * 1000;
-const ONE_HOUR = ONE_MINUTE * 60;
-const TWELVE_HOURS = 12 * ONE_HOUR;
-const reloadTimeout = TIMEOUT_FLAG
-  ? TIMEOUT_FLAG
-  : isProduction
-  ? TWELVE_HOURS
-  : ONE_MINUTE;
-
+const YMAUTH_GUEST_KEY = "ym-auth-guest";
+const BOT_ID_KEY = "bot-id";
 /**
  * get storage data sent from mobile
- * might be removed later if its fix mobile usign sdk
+ * might be removed later if mobile sdk implemented
  */
 const getStoragePayload = () => {
   const storagePayload = {
     flip_jwt_token: localStorage.getItem("token"),
     zendesk_jwt_token: localStorage.getItem("zendesk_jwt_token"),
     user_id_flip: localStorage.getItem("user_id_flip"),
-    timeout: reloadTimeout,
+    timeout: 60,
   };
   return storagePayload;
 };
 
 const getUniqueId = () => {
-  const id = localStorage.getItem(YMAUTH_GUEST);
+  const id = localStorage.getItem(YMAUTH_GUEST_KEY);
 
   if (id) {
     return id;
   }
 
   const newId = uuidv4();
-  localStorage.setItem(YMAUTH_GUEST, newId);
+  localStorage.setItem(YMAUTH_GUEST_KEY, newId);
   return newId;
 };
 
@@ -58,7 +41,7 @@ export const getYmConfig = () => {
   return {
     ymAuthenticationToken: getUniqueId(),
     setDisableActionsTimeout: true,
-    payload: { timeout: reloadTimeout },
+    payload: { timeout: 60 },
   };
 };
 
@@ -66,6 +49,11 @@ export const getYmConfig = () => {
  * setup yellow ai config and polyfill
  */
 export const yellowInit = () => {
+  // default to x1670310721294
+  // to add different bot id just set it in local storage manually
+  const NEXT_PUBLIC_YELLOW_BOT_ID =
+    localStorage.getItem(BOT_ID_KEY) || "x1670310721294";
+
   window.ymConfig = {
     bot: NEXT_PUBLIC_YELLOW_BOT_ID,
     host: "https://r2.cloud.yellow.ai",
